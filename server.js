@@ -4,6 +4,7 @@ var onend = require('end-of-stream')
 var through = require('through2')
 
 var chatModel = require('./models/chats.js')
+var chatHandler = require('./handlers/chat.js')
 
 var server = http.createServer(function (req, res) {
   res.setHeader('Access-Control-Allow-Origin', 'http://localhost:9966')
@@ -27,9 +28,6 @@ var server = http.createServer(function (req, res) {
   }
 })
 
-var count = 0
-var streamByUser = {}
-
 var ws = websock.createServer({ server: server }, function (stream) {
   stream.pipe(handleChat(stream))
 
@@ -48,34 +46,9 @@ function handleChat (stream) {
     var message = data[3]
 
     var runMessage = {
-      connection: function connection(username) {
-        chatModel
-          .getUser(username)
-          .catch(function () {
-            return chatModel.addUser(username)
-          })
-          .then(function () {
-            streamByUser[username] = stream
-            stream.write('connected!' + username + '\n')
-          })
-      },
-      add_user: function add_user(username, chat_id) {
-        chatModel.addUserIntoChat(chat_id, username)
-      },
-      add_message: function add_message(username, chat_id, message) {
-        chatModel.getAllUsersIntoChat(chat_id)
-          .then(function (users) {
-            users
-              .map(user => ({
-                name: user,
-                stream: streamByUser[user]
-              }))
-              .filter(user => user.stream)
-              .forEach(user => {
-                user.stream.write('chat_id!' + chat_id + '!<' + username + '> ' + message + '\n')
-              })
-          })
-      }
+      connection: chatHandler.connection(stream),
+      add_user: chatHandler.addUser(),
+      add_message: chatHandler.addMessage()
     }
 
     runMessage[typeOfMessage](username, chat_id, message)
