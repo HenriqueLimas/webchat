@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "to2": "^1.0.0",
+    "websocket-stream": "^4.0.0"
+  }
+}
