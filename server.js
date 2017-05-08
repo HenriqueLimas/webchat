@@ -6,11 +6,14 @@ const through = require('through2')
 const chatModel = require('./models/chats.js')
 const chatHandler = require('./handlers/chat.js')
 
+const url = require('url')
+const querystring = require('querystring')
+
 const server = http.createServer(function (req, res) {
   res.setHeader('Access-Control-Allow-Origin', 'http://localhost:9966')
 
   if (/GET/i.test(req.method) && /chats/.test(req.url)) {
-    const username = require('url').parse(req.url).query.split('=')[1]
+    const username = query(req).user
 
     chatModel.getAllChatsByUsername(username)
       .then(function (chats) {
@@ -18,7 +21,7 @@ const server = http.createServer(function (req, res) {
         res.end(JSON.stringify(chats))
       })
   } else if (/POST/i.test(req.method) && /chats/.test(req.url)) {
-    const username = require('url').parse(req.url).query.split('=')[1]
+    const username = query(req).user
 
     chatModel.createChat(username)
       .then(function (chat) {
@@ -27,6 +30,10 @@ const server = http.createServer(function (req, res) {
       })
   }
 })
+
+function query(req) {
+  return querystring.parse(url.parse(req.url).query)
+}
 
 const ws = websock.createServer({ server: server }, function (stream) {
   stream.pipe(handleChat(stream))
