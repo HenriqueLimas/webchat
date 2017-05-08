@@ -1,16 +1,16 @@
-var http = require('http')
-var websock = require('websocket-stream')
-var onend = require('end-of-stream')
-var through = require('through2')
+const http = require('http')
+const websock = require('websocket-stream')
+const onend = require('end-of-stream')
+const through = require('through2')
 
-var chatModel = require('./models/chats.js')
-var chatHandler = require('./handlers/chat.js')
+const chatModel = require('./models/chats.js')
+const chatHandler = require('./handlers/chat.js')
 
-var server = http.createServer(function (req, res) {
+const server = http.createServer(function (req, res) {
   res.setHeader('Access-Control-Allow-Origin', 'http://localhost:9966')
 
   if (/GET/i.test(req.method) && /chats/.test(req.url)) {
-    var username = require('url').parse(req.url).query.split('=')[1]
+    const username = require('url').parse(req.url).query.split('=')[1]
 
     chatModel.getAllChatsByUsername(username)
       .then(function (chats) {
@@ -18,7 +18,7 @@ var server = http.createServer(function (req, res) {
         res.end(JSON.stringify(chats))
       })
   } else if (/POST/i.test(req.method) && /chats/.test(req.url)) {
-    var username = require('url').parse(req.url).query.split('=')[1]
+    const username = require('url').parse(req.url).query.split('=')[1]
 
     chatModel.createChat(username)
       .then(function (chat) {
@@ -28,7 +28,7 @@ var server = http.createServer(function (req, res) {
   }
 })
 
-var ws = websock.createServer({ server: server }, function (stream) {
+const ws = websock.createServer({ server: server }, function (stream) {
   stream.pipe(handleChat(stream))
 
   onend(stream, function () {
@@ -39,13 +39,13 @@ var ws = websock.createServer({ server: server }, function (stream) {
 function handleChat (stream) {
   return through(function (buff, enc, next) {
     // type!username!chat_id!message
-    var data = buff.toString().split('!')
-    var typeOfMessage = data[0]
-    var username = data[1]
-    var chat_id = data[2]
-    var message = data[3]
+    const data = buff.toString().split('!')
+    const typeOfMessage = data[0]
+    const username = data[1]
+    const chat_id = data[2]
+    const message = data[3]
 
-    var runMessage = {
+    const runMessage = {
       connection: chatHandler.connection(stream),
       add_user: chatHandler.addUser(),
       add_message: chatHandler.addMessage()
